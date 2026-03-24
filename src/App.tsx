@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calculator, TrendingUp, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Download, Star, ShieldCheck, Mail, User, Phone, Clock, CircleDollarSign } from 'lucide-react';
+import { Calculator, TrendingUp, AlertCircle, ArrowRight, ArrowLeft, CheckCircle2, Download, Star, ShieldCheck, Mail, User, Phone, Clock, CircleDollarSign, RotateCcw } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { toPng } from 'html-to-image';
 import jsPDF from 'jspdf';
@@ -56,6 +56,7 @@ export default function App() {
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState<string | undefined>('');
   const [rgpdAccepted, setRgpdAccepted] = useState(false);
+  const [deseaLlamada, setDeseaLlamada] = useState(false);
   
   // Analítica & UTMs
   const [utms, setUtms] = useState({ source: '', medium: '', campaign: '' });
@@ -123,50 +124,61 @@ export default function App() {
   const dinero_dejado_en_la_mesa = facturacion_con_ia - facturacion_actual;
   const dinero_perdido_anual = dinero_dejado_en_la_mesa * 12;
   
-  // Coste dinámico basado en el volumen para asegurar que el ROI tenga sentido
-  const costeServicio = facturacion_actual < 5000 ? 297 : facturacion_actual < 15000 ? 497 : 997;
-  
-  const beneficio_neto_mensual = dinero_dejado_en_la_mesa - costeServicio;
-  const roi_multiplicador = beneficio_neto_mensual > 0 ? beneficio_neto_mensual / costeServicio : 0;
-
-  // --- RECOMENDACIÓN DE PRODUCTO ---
-  const getRecommendation = (roi: number) => {
-    if (roi < 2) {
+  // --- RECOMENDACIÓN DE PRODUCTO BASADA EN MÉTRICAS REALES ---
+  const getRecommendation = () => {
+    // Si no hay suficientes leads, el problema principal es la captación
+    if (leadsMensuales < 50) {
       return {
-        name: "Starter – Setter IA",
-        setup: "1.000 – 1.500€",
-        monthly: "350 – 650€",
-        message: "Ahora mismo no estás perdiendo dinero por falta de sistema complejo… estás perdiendo dinero porque no llegas a los leads a tiempo.",
-        features: ["Respuesta automática en <2 min", "Cualificación de leads", "Agenda automática"]
+        name: "Paquete Captación de Leads (Embudo + Ads + Setter IA)",
+        setup: "2.900 €",
+        monthly: "1.000 – 5.000 €",
+        baseCost: 1000,
+        message: "Tu principal cuello de botella es el volumen. Necesitas un sistema completo de captación que genere prospectos calificados desde el primer día.",
+        features: ["Embudo completo", "Campañas de Ads", "Setter IA de filtrado"]
       };
-    } else if (roi < 5) {
+    } 
+    // Si ya facturan bien y tienen volumen, necesitan el sistema completo para exprimir cada lead
+    else if (facturacion_actual >= 15000 && leadsMensuales >= 100) {
       return {
-        name: "Growth – Setter + Voz IA",
-        setup: "1.500 – 3.000€",
-        monthly: "650 – 1.500€",
-        message: "Ya tienes leads… el problema es que no los conviertes todos. Aquí es donde está el dinero.",
-        features: ["Todo lo del plan Starter", "Confirmación de citas", "Reducción de no-shows", "Seguimiento automático"]
+        name: "Bases de Datos Inteligentes y Follow-up",
+        setup: "Desde 1.000 €",
+        monthly: "Según volumen",
+        baseCost: 1000,
+        message: "Ya tienes tracción y volumen. Ahora vamos a exprimir cada céntimo de tu base de datos reactivando contactos dormidos y automatizando upsells.",
+        features: ["Reactivación de contactos dormidos", "Automatización de upsells", "Cross-sells", "Aumento de ticket medio"]
       };
-    } else if (roi < 10) {
+    }
+    // Si hay leads pero no asisten, el problema es el compromiso/recordatorio
+    else if (tasaNoShow > 20) {
       return {
-        name: "Scale – Embudo + Ads + IA",
-        setup: "2.900€+",
-        monthly: "1.000 – 5.000€",
-        message: "No necesitas más herramientas… necesitas un sistema completo que genere clientes todos los días.",
-        features: ["Captación de leads (Ads)", "Landing optimizada", "Setter IA", "Automatización de seguimiento"]
+        name: "Paquete Growth (Setter + Agente de Voz IA)",
+        setup: "1.500 – 3.500 €",
+        monthly: "650 – 4.000 €",
+        baseCost: 650,
+        message: "Estás pagando por leads que luego no se presentan. Combinar un Setter IA con un Agente de Voz natural reducirá tus no-shows un 30-40%.",
+        features: ["Setter IA multicanal", "Agente de voz natural", "Confirmación de citas", "Reducción de no-shows"]
       };
-    } else {
+    }
+    // Por defecto (tienen leads, asisten decentemente, pero fallan en respuesta/seguimiento)
+    else {
       return {
-        name: "Dominación – Sistema completo",
-        setup: "3.500€+",
-        monthly: "2.000 – 6.000€ o % facturación",
-        message: "Ya estás generando dinero… ahora vamos a multiplicarlo con lo que ya tienes.",
-        features: ["Todo lo del plan Scale", "Reactivación de leads antiguos", "Upsells automáticos", "Aumento de ticket medio"]
+        name: "Setter IA (Texto Multicanal)",
+        setup: "1.000 – 2.500 €",
+        monthly: "350 – 3.000 €",
+        baseCost: 350,
+        message: "Estás perdiendo ventas por no responder al instante. Un Setter IA atenderá WhatsApp, IG y web en menos de 2 minutos, 24/7.",
+        features: ["Atención en < 2 minutos", "WhatsApp, Instagram, Email y Web", "Cualificación de leads", "Agenda automática"]
       };
     }
   };
 
-  const recomendacion = getRecommendation(roi_multiplicador);
+  const recomendacion = getRecommendation();
+
+  // Coste dinámico basado en el plan recomendado para que el ROI sea 100% real
+  const costeServicio = recomendacion.baseCost;
+  
+  const beneficio_neto_mensual = dinero_dejado_en_la_mesa - costeServicio;
+  const roi_multiplicador = beneficio_neto_mensual > 0 ? beneficio_neto_mensual / costeServicio : 0;
   
   const fugasDetectadas = [];
   if (tiempoRespuesta >= 1) fugasDetectadas.push("Setter IA (Respuesta lenta)");
@@ -224,6 +236,8 @@ export default function App() {
             tasaCierre,
             tiempoRespuesta,
             ticketMedio,
+            deseaLlamada: deseaLlamada ? 'Sí' : 'No',
+            productoRecomendado: recomendacion?.name || 'No determinado',
             utm_source: utms.source,
             utm_medium: utms.medium,
             utm_campaign: utms.campaign
@@ -244,11 +258,21 @@ export default function App() {
     trackEvent('pdf_downloaded');
     
     try {
-      const dataUrl = await toPng(resultsRef.current, { 
+      const element = resultsRef.current;
+      
+      // Usamos html-to-image porque soporta oklch (Tailwind v4)
+      const dataUrl = await toPng(element, { 
         backgroundColor: '#09090b',
         pixelRatio: 2,
+        width: element.scrollWidth,
+        height: element.scrollHeight,
+        style: {
+          transform: 'scale(1)',
+          transformOrigin: 'top left',
+          width: `${element.scrollWidth}px`,
+          height: `${element.scrollHeight}px`
+        },
         filter: (node) => {
-          // Ignorar elementos con la clase 'no-print'
           if (node.classList && node.classList.contains('no-print')) {
             return false;
           }
@@ -262,14 +286,48 @@ export default function App() {
 
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (img.height * pdfWidth) / img.width;
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgHeight = (img.height * pdfWidth) / img.width;
       
-      pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      // Añadir primera página
+      pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      // Añadir páginas adicionales si el contenido es más largo que una página
+      while (heightLeft > 0) {
+        position = position - pageHeight;
+        pdf.addPage();
+        pdf.addImage(dataUrl, 'PNG', 0, position, pdfWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
       pdf.save('Reporte_Auditoria_IA.pdf');
     } catch (error) {
       console.error("Error al generar el PDF:", error);
     }
   };
+
+  const handleReset = () => {
+    setStep(1);
+    setLeadsMensuales(100);
+    setTasaNoShow(20);
+    setTasaCierre(5);
+    setTiempoRespuesta(4);
+    setTicketMedio(1000);
+    setNombre('');
+    setEmail('');
+    setTelefono('');
+    setRgpdAccepted(false);
+    setDeseaLlamada(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const whatsappNumber = "34644473207";
+  const whatsappMessage = `Hola, soy ${nombre || 'un usuario'}. He usado la Calculadora ROI y quiero implementar IA en mi negocio.\n\n📊 *Mis resultados:*\n- Facturación actual: ${formatCurrency(facturacion_actual)}/mes\n- Facturación proyectada con IA: ${formatCurrency(facturacion_con_ia)}/mes\n- Dinero que estoy perdiendo: ${formatCurrency(dinero_dejado_en_la_mesa)}/mes\n- ROI Estimado: x${formatNumber(roi_multiplicador)}\n\nMe gustaría recibir más información para recuperar este dinero.`;
+  const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-50 font-sans selection:bg-emerald-500/30">
@@ -435,6 +493,17 @@ export default function App() {
                     </label>
                   </div>
 
+                  <div className="flex items-start gap-3 pt-2">
+                    <input
+                      type="checkbox" id="llamada"
+                      checked={deseaLlamada} onChange={(e) => setDeseaLlamada(e.target.checked)}
+                      className="mt-1 w-4 h-4 rounded border-zinc-700 text-emerald-500 focus:ring-emerald-500 focus:ring-offset-zinc-900 bg-zinc-800"
+                    />
+                    <label htmlFor="llamada" className="text-xs text-zinc-400 leading-relaxed">
+                      Deseo ser contactado por teléfono para comentar mis resultados y evaluar si la IA encaja en mi negocio.
+                    </label>
+                  </div>
+
                   <div className="flex gap-4 pt-4">
                     <button 
                       type="button" onClick={handlePrevStep}
@@ -500,113 +569,169 @@ export default function App() {
                 </div>
 
                 {/* Tarjetas de Impacto */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
                   
                   {/* Tarjeta Dinero Perdido (Animada) */}
-                  <div className="bg-red-950/20 border border-red-900/30 rounded-2xl p-6 relative overflow-hidden group flex flex-col justify-between">
-                    {/* Animación de monedas cayendo */}
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-20">
+                  <div className="bg-gradient-to-br from-zinc-900 to-red-950/30 border border-red-900/50 rounded-3xl p-8 relative overflow-hidden group flex flex-col justify-between shadow-[0_0_40px_rgba(220,38,38,0.05)]">
+                    {/* Fondo de resplandor rojo inferior */}
+                    <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-red-600/10 blur-[60px] rounded-full"></div>
+                    
+                    {/* Animación de monedas cayendo (Hemorragia) */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
                       {[
-                        { left: '10%', delay: 0, duration: 2.5 },
-                        { left: '30%', delay: 0.5, duration: 2.2 },
-                        { left: '50%', delay: 1.2, duration: 2.8 },
-                        { left: '70%', delay: 0.8, duration: 2.1 },
-                        { left: '90%', delay: 1.5, duration: 2.6 },
+                        { left: '15%', delay: 0, duration: 3 },
+                        { left: '35%', delay: 0.7, duration: 2.5 },
+                        { left: '55%', delay: 1.5, duration: 3.2 },
+                        { left: '75%', delay: 0.4, duration: 2.8 },
+                        { left: '85%', delay: 2.1, duration: 3.5 },
                       ].map((coin, i) => (
                         <motion.div
                           key={i}
-                          className="absolute top-[-10%] text-red-500"
+                          className="absolute top-[-10%] text-red-500/50"
                           style={{ left: coin.left }}
                           animate={{ 
-                            y: ['0vh', '40vh'], 
-                            opacity: [0, 1, 1, 0],
-                            rotate: [0, 360] 
+                            y: ['0vh', '100vh'], 
+                            opacity: [0, 1, 0],
+                            rotate: [0, -180],
+                            scale: [0.8, 1.2, 0.8]
                           }}
                           transition={{ 
                             duration: coin.duration, 
                             repeat: Infinity, 
                             delay: coin.delay,
-                            ease: "linear"
+                            ease: "easeIn"
                           }}
                         >
-                          <CircleDollarSign className="w-8 h-8" />
+                          <CircleDollarSign className="w-6 h-6" />
                         </motion.div>
                       ))}
                     </div>
 
                     <div className="relative z-10">
-                      <div className="flex items-center gap-2 text-red-400 mb-6">
-                        <AlertCircle className="w-5 h-5" />
-                        <h3 className="font-bold uppercase tracking-wider text-sm">La Hemorragia de tu Negocio</h3>
+                      <div className="flex items-center gap-3 text-red-400 mb-6">
+                        <div className="p-2 bg-red-500/10 rounded-lg border border-red-500/20">
+                          <AlertCircle className="w-5 h-5" />
+                        </div>
+                        <h3 className="font-bold uppercase tracking-widest text-xs">La Hemorragia de tu Negocio</h3>
                       </div>
                       
-                      <div className="flex flex-col gap-1 mb-6">
-                        <p className="text-zinc-400 text-sm">Pérdida Mensual:</p>
-                        <p className="text-4xl font-black text-red-400">{formatCurrency(dinero_dejado_en_la_mesa)}</p>
+                      <div className="flex flex-col gap-2 mb-8">
+                        <p className="text-zinc-400 text-sm font-medium">Pérdida Mensual:</p>
+                        <motion.p 
+                          animate={{ opacity: [0.8, 1, 0.8] }} 
+                          transition={{ duration: 3, repeat: Infinity }}
+                          className="text-5xl font-black text-red-500 drop-shadow-[0_0_15px_rgba(239,68,68,0.3)] tracking-tight"
+                        >
+                          {formatCurrency(dinero_dejado_en_la_mesa)}
+                        </motion.p>
                       </div>
 
                       <div className="flex flex-col gap-1 mb-6">
-                        <p className="text-zinc-400 text-sm">Pérdida Anual Proyectada:</p>
-                        <p className="text-3xl font-bold text-red-500/80">{formatCurrency(dinero_perdido_anual)}</p>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Pérdida Anual Proyectada</p>
+                        <p className="text-3xl font-bold text-red-400/80">{formatCurrency(dinero_perdido_anual)}</p>
                       </div>
 
-                      <p className="text-sm text-zinc-400 mb-6">
-                        De {formatNumber(leads_perdidos_totales)} leads que pagaste por captar y no lograste cerrar.
-                      </p>
+                      <div className="bg-red-950/30 border border-red-900/30 rounded-xl p-4 mb-6">
+                        <p className="text-sm text-red-200/70">
+                          De <span className="text-red-400 font-bold">{formatNumber(leads_perdidos_totales)} leads</span> que pagaste por captar y no lograste cerrar.
+                        </p>
+                      </div>
 
                       {/* Gráfico de barras decreciente */}
-                      <div className="flex items-end gap-2 h-24 mt-4 opacity-80">
+                      <div className="flex items-end gap-2 h-24 mt-4 opacity-90">
                         {[100, 80, 60, 40, 20, 5].map((height, i) => (
                           <motion.div 
                             key={i}
-                            className="flex-1 bg-gradient-to-t from-red-900/40 to-red-500/80 rounded-t-sm"
+                            className="flex-1 bg-gradient-to-t from-red-950/50 to-red-500/60 border-t border-red-500/50 rounded-t-sm"
                             initial={{ height: "100%" }}
                             animate={{ height: `${height}%` }}
-                            transition={{ duration: 1.5, delay: i * 0.2, ease: "easeOut" }}
+                            transition={{ duration: 2, delay: i * 0.15, ease: "circOut" }}
                           />
                         ))}
                       </div>
-                      <p className="text-center text-xs text-red-500/60 mt-2 font-medium uppercase tracking-widest">Oportunidades esfumándose</p>
+                      <p className="text-center text-[10px] text-red-500/60 mt-3 font-bold uppercase tracking-widest">Oportunidades esfumándose</p>
                     </div>
                   </div>
 
                   {/* Tarjeta Facturación Proyectada (Animada) */}
-                  <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 blur-3xl rounded-full"></div>
+                  <div className="bg-gradient-to-br from-zinc-900 to-emerald-950/30 border border-emerald-500/30 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between shadow-[0_0_40px_rgba(16,185,129,0.05)]">
+                    {/* Fondo de resplandor verde superior */}
+                    <motion.div 
+                      animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.1, 1] }} 
+                      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }} 
+                      className="absolute -top-20 -right-20 w-72 h-72 bg-emerald-500/15 blur-[60px] rounded-full"
+                    />
                     
+                    {/* Animación de partículas subiendo (Ganancia) */}
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-30">
+                      {[
+                        { left: '20%', delay: 0.2, duration: 3.5 },
+                        { left: '40%', delay: 1.1, duration: 4 },
+                        { left: '60%', delay: 0.5, duration: 3.2 },
+                        { left: '80%', delay: 1.8, duration: 3.8 },
+                      ].map((particle, i) => (
+                        <motion.div
+                          key={i}
+                          className="absolute bottom-[-10%] w-1.5 h-1.5 bg-emerald-400 rounded-full shadow-[0_0_10px_rgba(52,211,153,0.8)]"
+                          style={{ left: particle.left }}
+                          animate={{ 
+                            y: ['0vh', '-100vh'], 
+                            opacity: [0, 1, 0],
+                            scale: [0.5, 1.5, 0.5]
+                          }}
+                          transition={{ 
+                            duration: particle.duration, 
+                            repeat: Infinity, 
+                            delay: particle.delay,
+                            ease: "easeOut"
+                          }}
+                        />
+                      ))}
+                    </div>
+
                     <div className="relative z-10">
-                      <div className="flex items-center gap-2 text-emerald-400 mb-6">
-                        <TrendingUp className="w-5 h-5" />
-                        <h3 className="font-bold uppercase tracking-wider text-sm">Facturación Proyectada (con IA)</h3>
+                      <div className="flex items-center gap-3 text-emerald-400 mb-6">
+                        <div className="p-2 bg-emerald-500/10 rounded-lg border border-emerald-500/20">
+                          <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <h3 className="font-bold uppercase tracking-widest text-xs">Facturación Proyectada (con IA)</h3>
                       </div>
                       
-                      <div className="flex flex-col gap-1 mb-6">
-                        <p className="text-zinc-400 text-sm">Mensual:</p>
-                        <p className="text-4xl font-black text-white">{formatCurrency(facturacion_con_ia)}</p>
+                      <div className="flex flex-col gap-2 mb-8">
+                        <p className="text-zinc-400 text-sm font-medium">Mensual:</p>
+                        <motion.p 
+                          animate={{ scale: [1, 1.02, 1] }} 
+                          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                          className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-emerald-500 drop-shadow-[0_0_15px_rgba(52,211,153,0.2)] tracking-tight"
+                        >
+                          {formatCurrency(facturacion_con_ia)}
+                        </motion.p>
                       </div>
 
                       <div className="flex flex-col gap-1 mb-6">
-                        <p className="text-zinc-400 text-sm">Anual Proyectada:</p>
+                        <p className="text-zinc-500 text-xs uppercase tracking-wider font-semibold">Anual Proyectada</p>
                         <p className="text-3xl font-bold text-emerald-400/80">{formatCurrency(facturacion_con_ia * 12)}</p>
                       </div>
 
-                      <p className="text-sm text-emerald-500/80 mb-6">
-                        Frente a los {formatCurrency(facturacion_actual)} mensuales actuales.
-                      </p>
+                      <div className="bg-emerald-950/30 border border-emerald-900/30 rounded-xl p-4 mb-6">
+                        <p className="text-sm text-emerald-200/70">
+                          Frente a los <span className="text-emerald-400 font-bold">{formatCurrency(facturacion_actual)}</span> mensuales actuales.
+                        </p>
+                      </div>
 
                       {/* Gráfico de barras creciente */}
-                      <div className="flex items-end gap-2 h-24 mt-4 opacity-80">
+                      <div className="flex items-end gap-2 h-24 mt-4 opacity-90">
                         {[20, 40, 60, 80, 90, 100].map((height, i) => (
                           <motion.div 
                             key={i}
-                            className="flex-1 bg-gradient-to-t from-emerald-900/40 to-emerald-400/80 rounded-t-sm"
+                            className="flex-1 bg-gradient-to-t from-emerald-950/50 to-emerald-400/60 border-t border-emerald-400/50 rounded-t-sm"
                             initial={{ height: "20%" }}
                             animate={{ height: `${height}%` }}
-                            transition={{ duration: 1.5, delay: i * 0.2, ease: "easeOut" }}
+                            transition={{ duration: 2, delay: i * 0.15, ease: "circOut" }}
                           />
                         ))}
                       </div>
-                      <p className="text-center text-xs text-emerald-500/60 mt-2 font-medium uppercase tracking-widest">Crecimiento escalable</p>
+                      <p className="text-center text-[10px] text-emerald-500/60 mt-3 font-bold uppercase tracking-widest">Crecimiento escalable</p>
                     </div>
                   </div>
                 </div>
@@ -755,13 +880,19 @@ export default function App() {
                       <Download className="w-4 h-4" /> Descargar PDF
                     </button>
                     <a 
-                      href="https://calendly.com/demiak/30min" 
+                      href={whatsappUrl} 
                       target="_blank"
                       rel="noopener noreferrer"
                       className="block w-full text-center bg-white hover:bg-zinc-200 text-zinc-950 font-bold py-4 px-8 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]"
                     >
                       Quiero recuperar este dinero
                     </a>
+                    <button 
+                      onClick={handleReset}
+                      className="w-full flex items-center justify-center gap-2 bg-transparent hover:bg-zinc-800/50 text-zinc-400 hover:text-zinc-300 font-medium py-3 px-6 rounded-xl transition-all border border-zinc-800"
+                    >
+                      <RotateCcw className="w-4 h-4" /> Nuevo Cálculo
+                    </button>
                     <div className="text-center space-y-1 mt-2">
                       <p className="text-xs text-emerald-400 font-medium flex items-center justify-center gap-1">
                         <ShieldCheck className="w-3 h-3" /> Solo aceptamos 4 auditorías por semana (2 disponibles)
